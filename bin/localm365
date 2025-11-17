@@ -1,4 +1,16 @@
 #!/usr/bin/env node
-
-require = require('esm')(module /*, options*/);
-require('../node_modules/@pnp/cli-microsoft365/dist');
+// Lightweight wrapper to expose the Microsoft 365 CLI under the alias 'localm365'.
+// Avoids deprecated 'esm' loader; relies on native dynamic import (Node >= 14, tested on 18+).
+(async () => {
+	try {
+		// Import side-effect starts the CLI (it reads process.argv internally).
+		await import('@pnp/cli-microsoft365/dist/index.js').catch(async () => {
+			// Fallback path resolution if the index path changed.
+			const pkgEntry = require.resolve('@pnp/cli-microsoft365');
+			await import(pkgEntry);
+		});
+	} catch (err) {
+		console.error('Failed to launch @pnp/cli-microsoft365:', err);
+		process.exit(1);
+	}
+})();

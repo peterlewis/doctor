@@ -1,4 +1,19 @@
 #!/usr/bin/env node
-
-require = require('esm')(module /*, options*/);
-require('../dist/cli').cli(process.argv);
+// Node 18+ compatible bootstrap without 'esm' package.
+// Uses dynamic import to load the CommonJS compiled CLI.
+(async () => {
+	try {
+		const mod = await import('../dist/cli.js');
+		if (typeof mod.cli === 'function') {
+			await mod.cli(process.argv);
+		} else if (mod.default && typeof mod.default.cli === 'function') {
+			await mod.default.cli(process.argv);
+		} else {
+			console.error('Doctor CLI entry not found in dist/cli.js');
+			process.exit(1);
+		}
+	} catch (err) {
+		console.error('Failed to start Doctor CLI:', err);
+		process.exit(1);
+	}
+})();
