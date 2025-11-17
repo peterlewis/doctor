@@ -6,6 +6,7 @@ export class CliCommand {
   private static disableTracking: boolean = false;
   private static cleanQuickLaunch: boolean = false;
   private static cleanTopNavigation: boolean = false;
+  private static dryRun: boolean = false;
   public static options: CommandArguments | null = null;
 
   public static init(options: CommandArguments) {
@@ -14,6 +15,7 @@ export class CliCommand {
     CliCommand.disableTracking = options.disableTracking || false;
     CliCommand.cleanQuickLaunch = options.cleanQuickLaunch || false;
     CliCommand.cleanTopNavigation = options.cleanTopNavigation || false;
+    CliCommand.dryRun = !!options.dryRun;
     CliCommand.options = Object.assign({}, options);
   }
 
@@ -34,5 +36,9 @@ export class CliCommand {
       cleanQuickLaunch: CliCommand.cleanQuickLaunch,
       cleanTopNavigation: CliCommand.cleanTopNavigation,
     };
+  }
+
+  public static getDryRun() {
+    return CliCommand.dryRun;
   }
 }

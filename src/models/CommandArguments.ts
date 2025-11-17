@@ -13,6 +13,7 @@ export interface CommandArguments {
   debug: boolean;
   continueOnError: boolean;
   retryWhenFailed: boolean;
+  dryRun?: boolean;
 
   disableComments: boolean;
   disableTracking: boolean;

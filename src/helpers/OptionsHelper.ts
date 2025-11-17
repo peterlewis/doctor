@@ -51,6 +51,7 @@ export class OptionsHelper {
       "--confirm": Boolean,
       "--continueOnError": Boolean,
       "--retryWhenFailed": Boolean,
+      "--dryRun": Boolean,
 
       "--disableComments": Boolean,
       "--disableTracking": Boolean,
@@ -125,6 +126,7 @@ export class OptionsHelper {
         (args["--retryWhenFailed"] as any) ||
         options["retryWhenFailed"] ||
         false,
+      dryRun: (args["--dryRun"] as any) || options["dryRun"] || false,
       disableTracking: args["--disableTracking"] || false,
       menu: options["menu"] || null,
       debug:
@@ -245,8 +247,8 @@ export class OptionsHelper {
         ),
         confirm: options.confirm || answers.confirm,
       };
-    } catch (e) {
-      throw e.message;
+    } catch (err) {
+      throw (err instanceof Error ? err : new Error(err as any));
     }
   }
 }

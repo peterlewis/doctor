@@ -62,22 +62,48 @@ const promiseExecScript = async <T>(
       `${CliCommand.getName()} ${args.join(" ")}`,
       toMask
     );
-    Logger.debug(`Command: ${cmdToExec}`);
+    const startTime = Date.now();
+    const logPhase = (phase: "start" | "success" | "error", extra?: string) => {
+      const duration = phase === "start" ? 0 : Date.now() - startTime;
+      const durationMsg = phase === "start" ? "" : ` (${duration}ms)`;
+      const suffix = extra ? ` ${extra}` : "";
+      Logger.debug(`[exec:${phase}] ${cmdToExec}${durationMsg}${suffix}`);
+    };
+    logPhase("start");
+
+    if (CliCommand.getDryRun()) {
+      Logger.debug(`[dry-run] Skipping execution: ${cmdToExec}`);
+      return resolve(("" as unknown) as T);
+    }
 
     if (shouldSpawn) {
       const execution = spawn(CliCommand.getName(), [...args]);
+      let finished = false;
 
       execution.stdout.on("data", (data) => {
         console.log(`${data}`);
       });
 
       execution.stdout.on("close", (data: any) => {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        logPhase("success");
         resolve(data);
       });
 
       execution.stderr.on("data", async (error) => {
-        error = Logger.mask(error, toMask);
-        reject(new Error(error));
+        if (finished) {
+          return;
+        }
+        finished = true;
+        const maskedError = Logger.mask(
+          error ? error.toString() : "",
+          toMask
+        );
+        logPhase("error", maskedError);
+        reject(new Error(maskedError));
       });
     } else {
       try {
@@ -85,14 +111,18 @@ const promiseExecScript = async <T>(
           `${CliCommand.getName()} ${args.join(" ")}`
         );
         if (stderr) {
-          const error = Logger.mask(stderr, toMask);
+          const error = Logger.mask(stderr.toString(), toMask);
+          logPhase("error", error);
           reject(new Error(error));
           return;
         }
 
+        logPhase("success");
         resolve(stdout as any as T);
       } catch (e) {
-        reject(e.message);
+        const error = e instanceof Error ? e : new Error(e as any);
+        logPhase("error", error.message);
+        reject(error);
       }
     }
   });
