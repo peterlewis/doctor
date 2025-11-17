@@ -32,8 +32,9 @@ export class ApiHelper {
 
       return null;
     } catch (err) {
-      Logger.debug(err.message);
-      throw err.message;
+      const error = err instanceof Error ? err : new Error(err as any);
+      Logger.debug(error.message);
+      throw error;
     }
   }
 
@@ -71,8 +72,9 @@ export class ApiHelper {
 
       return null;
     } catch (err) {
-      Logger.debug(err.message);
-      throw err.message;
+      const error = err instanceof Error ? err : new Error(err as any);
+      Logger.debug(error.message);
+      throw error;
     }
   }
 
@@ -112,8 +114,9 @@ export class ApiHelper {
 
       return false;
     } catch (err) {
-      Logger.debug(err.message);
-      throw err.message;
+      const error = err instanceof Error ? err : new Error(err as any);
+      Logger.debug(error.message);
+      throw error;
     }
   }
 }

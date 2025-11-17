@@ -45,12 +45,13 @@ export class DoctorTranspiler {
         for (const file of files) {
           try {
             await this.processFile(file, observer, options, output);
-          } catch (e) {
-            observer.error(e);
-            Logger.debug(e.message);
+          } catch (err) {
+            const error = err instanceof Error ? err : new Error(err as any);
+            observer.error(error);
+            Logger.debug(error.message);
 
             if (!options.continueOnError) {
-              throw e.message;
+              throw error;
             }
           }
         }
@@ -162,8 +163,8 @@ export class DoctorTranspiler {
               markup.content,
               options
             );
-          } catch (e) {
-            throw e.message;
+          } catch (err) {
+            throw (err instanceof Error ? err : new Error(err as any));
           }
         }
 
@@ -357,10 +358,11 @@ export class DoctorTranspiler {
         );
         contents = contents.replace(new RegExp(imgSource, "g"), imgUrl);
         StatusHelper.addImage();
-      } catch (e) {
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(err as any);
         return Promise.reject(
           new Error(
-            `Something failed while uploading the image asset. ${e.message}`
+            `Something failed while uploading the image asset. ${error.message}`
           )
         );
       }
