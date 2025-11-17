@@ -1,5 +1,16 @@
 # Changelog
     
+## [1.13.0]
+
+
+- Added preflight script with Node 18+ bootstraps.
+- Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.)
+- Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and improved slug/ID normalization.
+- Expanded navigation logging to trace stuck nodes.
+- Added a `--dryRun` option.
+- More detailed command tracing
+- Workflow pipelines now use the latest GitHub Actions runners.
+
 ## [1.12.0]
 
 

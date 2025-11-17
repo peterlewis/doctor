@@ -6,6 +6,31 @@
     }]
   },
   {
+    "title": "1.13.0",
+    "updates": [
+      {
+        "id": null,
+        "title": "Project rebranded under `@ptrlws/doctor` with refreshed package metadata, preflight script, and Node 18+ bootstraps."
+      },
+      {
+        "id": null,
+        "title": "Added a `--dryRun` option plus detailed command tracing to help diagnose CLI interactions."
+      },
+      {
+        "id": null,
+        "title": "Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and better slug/ID normalization."
+      },
+      {
+        "id": null,
+        "title": "Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.) and expanded navigation logging to trace stuck nodes."
+      },
+      {
+        "id": null,
+        "title": "Workflow pipelines now use the latest GitHub Actions runners."
+      }
+    ]
+  },
+  {
     "title": "1.12.0",
     "updates": [{
         "id": null,
