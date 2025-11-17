@@ -295,7 +295,7 @@ export class NavigationHelper {
     if (id) {
       await execScript(
         ArgumentsHelper.parse(
-          `spo navigation node remove --webUrl "${webUrl}" --location "${type}" --id "${id}" --confirm`
+          `spo navigation node remove --webUrl "${webUrl}" --location "${type}" --id "${id}" --force`
         ),
         CliCommand.getRetry()
       );
@@ -316,11 +316,23 @@ export class NavigationHelper {
     url: string,
     id: number = null
   ): Promise<NavigationItem | null> {
-    const rootElm = id ? `--parentNodeId "${id}"` : "";
+    const parentArg = id ? `--parentNodeId "${id}"` : "";
+    const locationArg = id ? "" : `--location "${type}"`;
+    const command = [
+      `spo navigation node add`,
+      `--webUrl "${webUrl}"`,
+      locationArg,
+      `--title "${name}"`,
+      `--url "${url}"`,
+      parentArg,
+      `-o json`,
+    ]
+      .filter((part) => !!part)
+      .join(" ");
     if (name) {
       const item = await execScript(
         ArgumentsHelper.parse(
-          `spo navigation node add --webUrl "${webUrl}" --location "${type}" --title "${name}" --url "${url}" ${rootElm} -o json`
+          command
         ),
         CliCommand.getRetry()
       );

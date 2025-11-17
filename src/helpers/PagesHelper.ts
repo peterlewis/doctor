@@ -57,7 +57,7 @@ export class PagesHelper {
               const relUrl = FileHelpers.getRelUrl(webUrl, filePath);
               await execScript<string>(
                 ArgumentsHelper.parse(
-                  `spo file remove --webUrl "${webUrl}" --url "${relUrl}" --confirm`
+                  `spo file remove --webUrl "${webUrl}" --url "${relUrl}" --force`
                 ),
                 CliCommand.getRetry()
               );
@@ -372,7 +372,7 @@ export class PagesHelper {
     try {
       await execScript(
         ArgumentsHelper.parse(
-          `spo file checkin --webUrl "${webUrl}" --fileUrl "${relativeUrl}"`
+          `spo file checkin --webUrl "${webUrl}" --url "${relativeUrl}"`
         ),
         false
       );

@@ -96,7 +96,7 @@ export class FileHelpers {
               .pop()}`;
             await execScript<string>(
               ArgumentsHelper.parse(
-                `spo file remove --webUrl "${webUrl}" --url "${filePath}" --confirm`
+                `spo file remove --webUrl "${webUrl}" --url "${filePath}" --force`
               ),
               CliCommand.getRetry()
             );
@@ -127,7 +127,7 @@ export class FileHelpers {
               .pop()}`;
             await execScript<string>(
               ArgumentsHelper.parse(
-                `spo folder remove --webUrl "${webUrl}" --folderUrl "${folderPath}" --confirm`
+                `spo folder remove --webUrl "${webUrl}" --folderUrl "${folderPath}" --force`
               ),
               CliCommand.getRetry()
             );
