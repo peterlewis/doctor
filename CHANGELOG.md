@@ -4,7 +4,7 @@
 
 
 - Added preflight script with Node 18+ bootstraps.
-- Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.)
+- Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.).
 - Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and improved slug/ID normalization.
 - Expanded navigation logging to trace stuck nodes.
 - Added a `--dryRun` option.
