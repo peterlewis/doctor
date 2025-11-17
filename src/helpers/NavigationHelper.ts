@@ -6,10 +6,16 @@ import { Logger } from "./logger";
 
 type LocationType = "QuickLaunch" | "TopNavigationBar";
 const WEIGHT_VALUE = 99999;
+const DEFAULT_NAV_ID = "navigation_item";
+
+const toLowerValue = (value?: string | null): string => {
+  if (typeof value === "undefined" || value === null) {
+    return "";
+  }
+  return value.toString().toLowerCase();
+};
 
 export class NavigationHelper {
-  private static qlElms: NavigationItem[] | string = null;
-  private static tnElms: NavigationItem[] | string = null;
 
   /**
    * Update the navigation on the site
@@ -54,6 +60,15 @@ export class NavigationHelper {
           menu.items = [...weightedItems, ...alphaItems];
 
           for (const item of menu.items) {
+            Logger.debug(
+              `Navigation item start (${location}): ${JSON.stringify({
+                name: item.name,
+                id: item.id,
+                url: item.url,
+                weight: item.weight,
+                hasChildren: !!(item.items && item.items.length > 0),
+              })}`
+            );
             const rootElm = navElms.find(
               (e: NavigationItem) => e.Title === item.name
             );
@@ -84,6 +99,9 @@ export class NavigationHelper {
                 item.items
               );
             }
+            Logger.debug(
+              `Navigation item completed (${location}): ${item.name || item.id}`
+            );
           }
         }
       }
@@ -172,7 +190,7 @@ export class NavigationHelper {
     let crntItem: MenuItem | null = null;
     // Create the parent items if needed
     if (item && item.parent) {
-      const parentIds = item.parent.toLowerCase().replace(/ /g, "").split("/");
+      const parentIds = toLowerValue(item.parent).replace(/ /g, "").split("/");
       for (let idx = 0; idx < parentIds.length; idx++) {
         const parentId = parentIds[idx];
         const itemSet = idx === 0 ? items : crntItem.items || [];
@@ -217,8 +235,9 @@ export class NavigationHelper {
       );
     } else {
       // Add the new item to the menu
+      const navIdSource = item.id || item.name || title || slug || DEFAULT_NAV_ID;
       (crntItem ? crntItem.items : items).push({
-        id: (item.id || item.name || title).toLowerCase().replace(/ /g, ""),
+        id: toLowerValue(navIdSource).replace(/ /g, ""),
         url: slug
           ? `${webUrl}${webUrl.endsWith("/") ? "" : "/"}sitepages/${slug}`
           : "",
@@ -254,32 +273,11 @@ export class NavigationHelper {
       args = JSON.parse(args);
     }
 
-    if (type === "QuickLaunch") {
-      if (!this.qlElms) {
-        this.qlElms = await execScript<NavigationItem[]>(
-          [...args],
-          CliCommand.getRetry()
-        );
-      }
-      return typeof this.qlElms === "string"
-        ? JSON.parse(this.qlElms)
-        : this.qlElms;
-    }
-
-    if (type === "TopNavigationBar") {
-      if (!this.tnElms) {
-        this.tnElms = await execScript<NavigationItem[]>(
-          [...args],
-          CliCommand.getRetry()
-        );
-      }
-      return typeof this.tnElms === "string"
-        ? JSON.parse(this.tnElms)
-        : this.tnElms;
-    }
-
-    // This should never happen, but one can never really know for sure
-    return null;
+    const response = await execScript<NavigationItem[]>(
+      [...args],
+      CliCommand.getRetry()
+    );
+    return typeof response === "string" ? JSON.parse(response) : response;
   }
 
   /**
@@ -356,7 +354,9 @@ export class NavigationHelper {
     level: number = 0
   ) {
     level++;
-    Logger.debug(`Navigation start level: ${level}`);
+    Logger.debug(
+      `Navigation start level: ${level} (${type}) - items: ${items.length}`
+    );
     if (type === "QuickLaunch" && level > 2) {
       Logger.debug(`Max level of navigation depth reached`);
       return;
@@ -371,6 +371,15 @@ export class NavigationHelper {
     items = [...weightedItems, ...alphaItems];
 
     for (const item of items) {
+      Logger.debug(
+        `Navigation sub-item start (${type}) level ${level}: ${JSON.stringify({
+          name: item.name,
+          id: item.id,
+          url: item.url,
+          parent: rootId,
+          hasChildren: !!(item.items && item.items.length > 0),
+        })}`
+      );
       const parentNode = await this.createNavigationElm(
         webUrl,
         type,
@@ -388,6 +397,10 @@ export class NavigationHelper {
           level
         );
       }
+      Logger.debug(
+        `Navigation sub-item completed (${type}) level ${level}: ${item.name ||
+          item.id}`
+      );
     }
   }
 
@@ -406,10 +419,12 @@ export class NavigationHelper {
    * @param b
    */
   private static alphabeticalSorting(a: MenuItem, b: MenuItem) {
-    if ((a.name || a.id).toLowerCase() < (b.name || b.id).toLowerCase()) {
+    const valueA = toLowerValue(a.name || a.id);
+    const valueB = toLowerValue(b.name || b.id);
+    if (valueA < valueB) {
       return -1;
     }
-    if ((a.name || a.id).toLowerCase() > (b.name || b.id).toLowerCase()) {
+    if (valueA > valueB) {
       return 1;
     }
     return 0;
