@@ -65,7 +65,7 @@ export class SiteHelpers {
       }
 
       if (siteDesign.chrome.footerEmphasis) {
-        cmdChrome = `${cmdChrome} --footerEmphasis "${siteDesign.chrome.footerEmphasis}`;
+        cmdChrome = `${cmdChrome} --footerEmphasis "${siteDesign.chrome.footerEmphasis}"`;
       }
 
       if (siteDesign.chrome.footerLayout) {
