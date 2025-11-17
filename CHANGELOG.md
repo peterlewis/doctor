@@ -8,7 +8,7 @@
 - Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and improved slug/ID normalization.
 - Expanded navigation logging to trace stuck nodes.
 - Added a `--dryRun` option.
-- More detailed command tracing
+- More detailed command tracing.
 - Workflow pipelines now use the latest GitHub Actions runners.
 
 ## [1.12.0]

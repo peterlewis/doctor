@@ -10,19 +10,27 @@
     "updates": [
       {
         "id": null,
-        "title": "Project rebranded under `@ptrlws/doctor` with refreshed package metadata, preflight script, and Node 18+ bootstraps."
+        "title": "Added preflight script with Node 18+ bootstraps."
       },
       {
         "id": null,
-        "title": "Added a `--dryRun` option plus detailed command tracing to help diagnose CLI interactions."
+        "title": "Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.)."
       },
       {
         "id": null,
-        "title": "Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and better slug/ID normalization."
+        "title": "Hardened SharePoint publishing: smarter error handling, skip redundant check-ins, default section creation when needed, and improved slug/ID normalization."
       },
       {
         "id": null,
-        "title": "Updated M365 CLI calls to the latest syntax (`--force`, `--url`, etc.) and expanded navigation logging to trace stuck nodes."
+        "title": "Expanded navigation logging to trace stuck nodes."
+      },
+      {
+        "id": null,
+        "title": "Added a `--dryRun` option."
+      },
+      {
+        "id": null,
+        "title": "More detailed command tracing."
       },
       {
         "id": null,
