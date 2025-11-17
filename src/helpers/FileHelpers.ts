@@ -142,7 +142,7 @@ export class FileHelpers {
           const folderPath = `${crntFolder}${relPath}`;
           await execScript<string>(
             ArgumentsHelper.parse(
-              `spo folder remove --webUrl "${webUrl}" --folderUrl "${folderPath}" --force`
+              `spo folder remove --webUrl "${webUrl}" --url "${folderPath}" --force`
             ),
             CliCommand.getRetry()
           );
