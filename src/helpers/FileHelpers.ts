@@ -8,6 +8,9 @@ import {
 } from "@helpers";
 import { basename } from "path";
 
+const normalizeValue = (value?: string | null) =>
+  (value || "").toString().toLowerCase();
+
 export class FileHelpers {
   private static allPages: File[] = [];
   private static checkedFiles: string[] = [];
@@ -90,17 +93,23 @@ export class FileHelpers {
         Logger.debug(`Files to be removed: ${JSON.stringify(filesData)}`);
 
         for (const file of filesData as File[]) {
-          if (file && file.ServerRelativeUrl) {
-            const filePath = `${crntFolder}${file.ServerRelativeUrl.toLowerCase()
-              .split(crntFolder)
-              .pop()}`;
-            await execScript<string>(
-              ArgumentsHelper.parse(
-                `spo file remove --webUrl "${webUrl}" --url "${filePath}" --force`
-              ),
-              CliCommand.getRetry()
-            );
+          if (!file || !file.ServerRelativeUrl) {
+            continue;
           }
+          const normalizedServerUrl = normalizeValue(file.ServerRelativeUrl);
+          if (!normalizedServerUrl) {
+            continue;
+          }
+          const normalizedFolder = normalizeValue(crntFolder);
+          const relPath =
+            normalizedServerUrl.split(normalizedFolder).pop() || "";
+          const filePath = `${crntFolder}${relPath}`;
+          await execScript<string>(
+            ArgumentsHelper.parse(
+              `spo file remove --webUrl "${webUrl}" --url "${filePath}" --force`
+            ),
+            CliCommand.getRetry()
+          );
         }
 
         let folderData: Folder[] | string = await execScript<string>(
@@ -116,25 +125,30 @@ export class FileHelpers {
         Logger.debug(`Folders to be removed: ${JSON.stringify(folderData)}`);
 
         for (const folder of folderData as Folder[]) {
-          if (
-            folder &&
-            folder.Exists &&
-            folder.Name.toLowerCase() !== "forms" &&
-            folder.Name.toLowerCase() !== "templates"
-          ) {
-            const folderPath = `${crntFolder}${folder.ServerRelativeUrl.toLowerCase()
-              .split(crntFolder)
-              .pop()}`;
-            await execScript<string>(
-              ArgumentsHelper.parse(
-                `spo folder remove --webUrl "${webUrl}" --folderUrl "${folderPath}" --force`
-              ),
-              CliCommand.getRetry()
-            );
+          if (!folder || !folder.Exists) {
+            continue;
           }
+          const folderName = normalizeValue(folder.Name);
+          if (!folderName || folderName === "forms" || folderName === "templates") {
+            continue;
+          }
+          const normalizedServerUrl = normalizeValue(folder.ServerRelativeUrl);
+          if (!normalizedServerUrl) {
+            continue;
+          }
+          const normalizedFolder = normalizeValue(crntFolder);
+          const relPath =
+            normalizedServerUrl.split(normalizedFolder).pop() || "";
+          const folderPath = `${crntFolder}${relPath}`;
+          await execScript<string>(
+            ArgumentsHelper.parse(
+              `spo folder remove --webUrl "${webUrl}" --folderUrl "${folderPath}" --force`
+            ),
+            CliCommand.getRetry()
+          );
         }
-      } catch (e) {
-        throw e.message;
+      } catch (err) {
+        throw (err instanceof Error ? err : new Error(err as any));
       }
     }
   }

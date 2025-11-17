@@ -115,10 +115,11 @@ export class SiteHelpers {
           ),
           CliCommand.getRetry()
         );
-      } catch (e) {
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(err as any);
         return Promise.reject(
           new Error(
-            `Something failed while setting the site logo. ${e.message}`
+            `Something failed while setting the site logo. ${error.message}`
           )
         );
       }

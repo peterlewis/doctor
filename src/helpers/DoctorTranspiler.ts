@@ -40,7 +40,12 @@ export class DoctorTranspiler {
       (async () => {
         const { files } = ctx;
 
-        await PagesHelper.getAllPages(webUrl);
+        const shouldLoadExistingPages =
+          options.skipExistingPages ||
+          (options.cleanEnd && options.confirm);
+        if (shouldLoadExistingPages) {
+          await PagesHelper.getAllPages(webUrl);
+        }
 
         for (const file of files) {
           try {
@@ -224,7 +229,22 @@ export class DoctorTranspiler {
               slug
             );
             if (controlData) {
-              const webparts: Control[] = JSON.parse(controlData);
+              let webparts: Control[] = JSON.parse(controlData);
+              const hasSections = webparts.some(
+                (control) =>
+                  typeof control.controlType === "undefined" && control.position
+              );
+              if (!hasSections) {
+                Logger.debug(
+                  `No sections found for ${slug}. Adding default section.`
+                );
+                await PagesHelper.ensureDefaultSection(webUrl, slug);
+                const refreshedControls = await PagesHelper.getPageControls(
+                  webUrl,
+                  slug
+                );
+                webparts = JSON.parse(refreshedControls || "[]");
+              }
               const markdownWp: Control = webparts.find(
                 (c: Control) =>
                   c.webPartData && c.webPartData.title === webPartTitle

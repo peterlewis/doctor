@@ -17,6 +17,9 @@ import {
   MarkdownHelper,
 } from "@helpers";
 
+const normalizeValue = (value?: string | null): string =>
+  (value || "").toString().toLowerCase();
+
 export class PagesHelper {
   private static pages: File[] = [];
   private static processedPages: { [slug: string]: number } = {};
@@ -41,11 +44,14 @@ export class PagesHelper {
   ): Promise<Observable<string>> {
     return new Observable((observer) => {
       (async () => {
-        const untouched = this.getUntouchedPages().filter(
-          (slug) =>
-            !slug.toLowerCase().startsWith("templates") &&
-            slug.endsWith(".aspx")
-        );
+        const untouched = this.getUntouchedPages().filter((slug) => {
+          const normalizedSlug = normalizeValue(slug);
+          return (
+            !!normalizedSlug &&
+            !normalizedSlug.startsWith("templates") &&
+            normalizedSlug.endsWith(".aspx")
+          );
+        });
         Logger.debug(`Removing the following files`);
         Logger.debug(untouched);
         for (const slug of untouched) {
@@ -62,12 +68,13 @@ export class PagesHelper {
                 CliCommand.getRetry()
               );
             }
-          } catch (e) {
-            observer.error(e);
-            Logger.debug(e.message);
+          } catch (err) {
+            const error = err instanceof Error ? err : new Error(err as any);
+            observer.error(error);
+            Logger.debug(error.message);
 
             if (!options.continueOnError) {
-              throw e.message;
+              throw error;
             }
           }
         }
@@ -97,13 +104,15 @@ export class PagesHelper {
 
       if (skipExistingPages) {
         if (PagesHelper.pages && PagesHelper.pages.length > 0) {
-          const page = PagesHelper.pages.find(
-            (page: File) =>
-              page.FileRef.toLowerCase() === relativeUrl.toLowerCase()
-          );
+          const page = PagesHelper.pages.find((page: File) => {
+            const fileRef = normalizeValue(page.FileRef);
+            return (
+              !!fileRef && fileRef === normalizeValue(relativeUrl)
+            );
+          });
           if (page) {
             // Page already existed
-            PagesHelper.processedPages[slug] = page.ID;
+            PagesHelper.processedPages[normalizeValue(slug)] = page.ID;
             Logger.debug(
               `Processed pages: ${JSON.stringify(PagesHelper.processedPages)}`
             );
@@ -122,7 +131,7 @@ export class PagesHelper {
         pageData = JSON.parse(pageData);
       }
 
-      PagesHelper.processedPages[slug] = (
+      PagesHelper.processedPages[normalizeValue(slug)] = (
         pageData as Page
       ).ListItemAllFields.Id;
       Logger.debug(
@@ -192,7 +201,7 @@ export class PagesHelper {
           (t) => t.Title === template
         );
         if (pageTemplate) {
-          const templateUrl = pageTemplate.Url.toLowerCase().replace(
+          const templateUrl = normalizeValue(pageTemplate.Url).replace(
             "sitepages/",
             ""
           );
@@ -265,6 +274,24 @@ export class PagesHelper {
   }
 
   /**
+   * Ensure the page contains at least one default section
+   * @param webUrl
+   * @param slug
+   */
+  public static async ensureDefaultSection(
+    webUrl: string,
+    slug: string
+  ): Promise<void> {
+    Logger.debug(`Ensuring default section exists for ${slug}`);
+    await execScript(
+      ArgumentsHelper.parse(
+        `spo page section add --webUrl "${webUrl}" --pageName "${slug}" --sectionTemplate OneColumn`
+      ),
+      CliCommand.getRetry()
+    );
+  }
+
+  /**
    * Inserts or create the control
    * @param webPartTitle
    * @param markdown
@@ -295,7 +322,7 @@ export class PagesHelper {
       // Web part needs to be updated
       await execScript(
         ArgumentsHelper.parse(
-          `spo page control set --webUrl "${webUrl}" --name "${slug}" --id "${wpId}" --webPartData @${wpData}`
+          `spo page control set --webUrl "${webUrl}" --pageName "${slug}" --id "${wpId}" --webPartData @${wpData}`
         ),
         CliCommand.getRetry()
       );
@@ -369,15 +396,25 @@ export class PagesHelper {
    */
   public static async publishPageIfNeeded(webUrl: string, slug: string) {
     const relativeUrl = FileHelpers.getRelUrl(webUrl, `sitepages/${slug}`);
-    try {
-      await execScript(
-        ArgumentsHelper.parse(
-          `spo file checkin --webUrl "${webUrl}" --url "${relativeUrl}"`
-        ),
-        false
-      );
-    } catch (e) {
-      // Might be that the file doesn't need to be checked in
+    const requiresCheckIn = await this.pageRequiresCheckIn(
+      webUrl,
+      relativeUrl
+    );
+    if (requiresCheckIn) {
+      try {
+        await execScript(
+          ArgumentsHelper.parse(
+            `spo file checkin --webUrl "${webUrl}" --url "${relativeUrl}"`
+          ),
+          false
+        );
+      } catch (e) {
+        Logger.debug(
+          `Page check-in skipped for ${relativeUrl}: ${e instanceof Error ? e.message : e}`
+        );
+      }
+    } else {
+      Logger.debug(`Skipping check-in for ${relativeUrl}, no pending checkout.`);
     }
     await execScript(
       ArgumentsHelper.parse(
@@ -393,7 +430,8 @@ export class PagesHelper {
    * @param slug
    */
   private static async getPageId(webUrl: string, slug: string) {
-    if (!PagesHelper.processedPages[slug.toLowerCase()]) {
+    const normalizedSlug = normalizeValue(slug);
+    if (!PagesHelper.processedPages[normalizedSlug]) {
       let pageData: any = await execScript(
         ArgumentsHelper.parse(
           `spo page get --webUrl "${webUrl}" --name "${slug}" --metadataOnly --output json`
@@ -406,16 +444,62 @@ export class PagesHelper {
         Logger.debug(pageData);
 
         if (pageData.ListItemAllFields && pageData.ListItemAllFields.Id) {
-          PagesHelper.processedPages[slug.toLowerCase()] =
+          PagesHelper.processedPages[normalizedSlug] =
             pageData.ListItemAllFields.Id;
-          return PagesHelper.processedPages[slug.toLowerCase()];
+          return PagesHelper.processedPages[normalizedSlug];
         }
 
         return null;
       }
     }
 
-    return PagesHelper.processedPages[slug.toLowerCase()];
+    return PagesHelper.processedPages[normalizedSlug];
+  }
+
+  private static async pageRequiresCheckIn(
+    webUrl: string,
+    relativeUrl: string
+  ): Promise<boolean> {
+    try {
+      let fileInfo: any = await execScript(
+        ArgumentsHelper.parse(
+          `spo file get --webUrl "${webUrl}" --url "${relativeUrl}" -o json`
+        ),
+        CliCommand.getRetry()
+      );
+      if (fileInfo && typeof fileInfo === "string") {
+        fileInfo = JSON.parse(fileInfo);
+      }
+      if (!fileInfo) {
+        return false;
+      }
+
+      const checkOutType = fileInfo.CheckOutType;
+      const checkedOutBy =
+        fileInfo.CheckedOutByUserId ||
+        fileInfo.CheckedOutByUser ||
+        fileInfo.LockedByUserId;
+
+      if (typeof checkOutType !== "undefined" && checkOutType !== null) {
+        if (
+          (typeof checkOutType === "number" && checkOutType !== 2) ||
+          (typeof checkOutType === "string" &&
+            checkOutType.toLowerCase() !== "none")
+        ) {
+          return true;
+        }
+      }
+
+      return !!checkedOutBy;
+    } catch (err) {
+      Logger.debug(
+        `Unable to determine checkout status for ${relativeUrl}: ${
+          err instanceof Error ? err.message : err
+        }`
+      );
+    }
+
+    return false;
   }
 
   /**
@@ -425,9 +509,11 @@ export class PagesHelper {
     let untouched: string[] = [];
     for (const page of PagesHelper.pages) {
       const { FileRef: url } = page;
-      const slug = url.toLowerCase().split("/sitepages/")[1];
-      if (!PagesHelper.processedPages[slug]) {
-        untouched.push(slug);
+      const normalizedUrl = normalizeValue(url);
+      const slug = normalizedUrl.split("/sitepages/")[1];
+      const normalizedSlug = normalizeValue(slug);
+      if (normalizedSlug && !PagesHelper.processedPages[normalizedSlug]) {
+        untouched.push(normalizedSlug);
       }
     }
     return untouched;

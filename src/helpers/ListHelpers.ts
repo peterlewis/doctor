@@ -19,9 +19,10 @@ export class ListHelpers {
       if (listData && typeof listData === "string") {
         listData = JSON.parse(listData);
       }
-      this.pageList = (listData as ListData[]).find((l) =>
-        l.Url.toLowerCase().includes("/sitepages")
-      );
+      this.pageList = (listData as ListData[]).find((l) => {
+        const listUrl = (l && l.Url ? l.Url : "").toLowerCase();
+        return !!listUrl && listUrl.includes("/sitepages");
+      });
     }
     return this.pageList;
   }
