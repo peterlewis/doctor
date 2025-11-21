@@ -112,10 +112,17 @@ export class MarkdownHelper {
     const theme =
       mdOptions && mdOptions.theme ? mdOptions.theme.toLowerCase() : "dark";
 
-    const processedMarkdown =
-      !allowHtml && !wasAlreadyParsed
-        ? await ShortcodesHelpers.parseBefore(markdown, context)
-        : markdown;
+    let processedMarkdown = markdown;
+    if (!allowHtml && !wasAlreadyParsed) {
+      processedMarkdown = await ShortcodesHelpers.parseBefore(
+        processedMarkdown,
+        context
+      );
+      processedMarkdown = await ShortcodesHelpers.parseAfter(
+        processedMarkdown,
+        context
+      );
+    }
 
     let wpData = {
       title: webPartTitle,
