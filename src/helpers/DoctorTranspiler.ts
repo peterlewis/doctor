@@ -252,14 +252,15 @@ export class DoctorTranspiler {
               await PagesHelper.insertOrCreateControl(
                 webPartTitle,
                 markup.content,
-                slug,
-                webUrl,
-                options,
-                markdownWp ? markdownWp.id : null,
-                options.markdown,
-                file.endsWith(`.machinetranslated.md`)
-              );
-            }
+              slug,
+              webUrl,
+              options,
+              markdownWp ? markdownWp.id : null,
+              options.markdown,
+              file.endsWith(`.machinetranslated.md`),
+              { currentFilePath: file }
+            );
+          }
 
             // Check if metadata needs to be added to the page
             if (metadata) {

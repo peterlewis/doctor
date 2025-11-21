@@ -6,7 +6,7 @@ import {
   CalloutRenderer,
   TableOfContentsRenderer,
 } from "../shortcodes";
-import { Shortcode, TocPosition } from "@models";
+import { Shortcode, ShortcodeContext, TocPosition } from "@models";
 import { Logger, TelemetryHelper } from "@helpers";
 import { existsAsync } from "@utils";
 
@@ -49,16 +49,22 @@ export class ShortcodesHelpers {
    * Parse shortcodes before markdown was processed
    * @param htmlMarkup
    */
-  public static async parseBefore(markdown: string): Promise<string> {
-    return this.parse(markdown, true);
+  public static async parseBefore(
+    markdown: string,
+    context?: ShortcodeContext
+  ): Promise<string> {
+    return this.parse(markdown, true, context);
   }
 
   /**
    * Parse shortcodes after markdown was processed
    * @param htmlMarkup
    */
-  public static async parseAfter(htmlMarkup: string): Promise<string> {
-    return this.parse(htmlMarkup, false);
+  public static async parseAfter(
+    htmlMarkup: string,
+    context?: ShortcodeContext
+  ): Promise<string> {
+    return this.parse(htmlMarkup, false, context);
   }
 
   /**
@@ -67,7 +73,8 @@ export class ShortcodesHelpers {
    */
   private static async parse(
     htmlMarkup: string,
-    beforeMarkdown: boolean
+    beforeMarkdown: boolean,
+    context?: ShortcodeContext
   ): Promise<string> {
     if (!ShortcodesHelpers.shortcodes) return htmlMarkup;
 
@@ -119,7 +126,11 @@ export class ShortcodesHelpers {
               tocPostProcessing = attributes.position;
             }
 
-            const scHtml = await shortcode.render(attributes, $elm.html());
+            const scHtml = await shortcode.render(
+              attributes,
+              $elm.html(),
+              context
+            );
             $elm.replaceWith(scHtml);
 
             Logger.debug(`Shortcode "${tag}" its HTML:`);

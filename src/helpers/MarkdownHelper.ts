@@ -4,7 +4,11 @@ import md = require("markdown-it");
 import hljs = require("highlight.js");
 import { encode } from "html-entities";
 import { CliCommand, ShortcodesHelpers, TempDataHelper } from "@helpers";
-import { CommandArguments, MarkdownSettings } from "@models";
+import {
+  CommandArguments,
+  MarkdownSettings,
+  ShortcodeContext,
+} from "@models";
 
 export class MarkdownHelper {
   /**
@@ -36,7 +40,11 @@ export class MarkdownHelper {
    * @param options
    * @returns
    */
-  public static async getHtmlData(markdown: string, options: CommandArguments) {
+  public static async getHtmlData(
+    markdown: string,
+    options: CommandArguments,
+    context?: ShortcodeContext
+  ) {
     const converter = md({
       html: true,
       breaks: true,
@@ -69,14 +77,17 @@ export class MarkdownHelper {
       mdOptions && mdOptions.theme ? mdOptions.theme.toLowerCase() : "dark";
 
     const cleanCss = new CleanCSS({});
-    let htmlMarkup = await ShortcodesHelpers.parseBefore(`
+    let htmlMarkup = await ShortcodesHelpers.parseBefore(
+      `
 <div class="doctor__container">
 <div class="doctor__container__markdown">
   ${markdown}
 </div>
-</div>`);
+</div>`,
+      context
+    );
     htmlMarkup = converter.render(htmlMarkup);
-    htmlMarkup = await ShortcodesHelpers.parseAfter(htmlMarkup);
+    htmlMarkup = await ShortcodesHelpers.parseAfter(htmlMarkup, context);
     htmlMarkup = `${htmlMarkup}<style>${
       cleanCss.minify(this.getEditorStyles(theme === "light")).styles
     } ${cleanCss.minify(this.getShortcodeStyles()).styles}</style>`;
@@ -94,7 +105,8 @@ export class MarkdownHelper {
     markdown: string,
     mdOptions: MarkdownSettings | null,
     options: CommandArguments,
-    wasAlreadyParsed: boolean = false
+    wasAlreadyParsed: boolean = false,
+    context?: ShortcodeContext
   ): Promise<string> {
     const allowHtml = mdOptions && mdOptions.allowHtml;
     const theme =
@@ -102,7 +114,7 @@ export class MarkdownHelper {
 
     const processedMarkdown =
       !allowHtml && !wasAlreadyParsed
-        ? await ShortcodesHelpers.parseBefore(markdown)
+        ? await ShortcodesHelpers.parseBefore(markdown, context)
         : markdown;
 
     let wpData = {
@@ -127,7 +139,7 @@ export class MarkdownHelper {
     if (allowHtml) {
       let htmlMarkup = wasAlreadyParsed
         ? processedMarkdown
-        : await this.getHtmlData(processedMarkdown, options);
+        : await this.getHtmlData(processedMarkdown, options, context);
 
       if (htmlMarkup) {
         wpData.serverProcessedContent["htmlStrings"] = {

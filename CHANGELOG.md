@@ -1,9 +1,5 @@
 # Changelog
     
-## [1.14.0]
-
-- Allow shortcodes to run when `markdown.allowHtml` is false and keep output in the markdown web part (no `htmlStrings` when HTML is disabled).
-
 ## [1.13.0]
 
 
