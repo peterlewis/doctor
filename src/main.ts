@@ -42,8 +42,9 @@ export class Commands {
           `
           );
 
-          await ShortcodesHelpers.init(options.shortcodesFolder);
         }
+
+        await ShortcodesHelpers.init(options.shortcodesFolder);
 
         await Publish.start(options);
       } else if (options.task === Command.init) {

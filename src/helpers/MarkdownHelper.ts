@@ -100,11 +100,16 @@ export class MarkdownHelper {
     const theme =
       mdOptions && mdOptions.theme ? mdOptions.theme.toLowerCase() : "dark";
 
+    const processedMarkdown =
+      !allowHtml && !wasAlreadyParsed
+        ? await ShortcodesHelpers.parseBefore(markdown)
+        : markdown;
+
     let wpData = {
       title: webPartTitle,
       serverProcessedContent: {
         searchablePlainTexts: {
-          code: encode(markdown),
+          code: encode(processedMarkdown),
         },
       },
       dataVersion: "2.0",
@@ -121,8 +126,8 @@ export class MarkdownHelper {
 
     if (allowHtml) {
       let htmlMarkup = wasAlreadyParsed
-        ? markdown
-        : await this.getHtmlData(markdown, options);
+        ? processedMarkdown
+        : await this.getHtmlData(processedMarkdown, options);
 
       if (htmlMarkup) {
         wpData.serverProcessedContent["htmlStrings"] = {
