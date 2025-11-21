@@ -105,21 +105,13 @@ export class MarkdownHelper {
         ? await ShortcodesHelpers.parseBefore(markdown)
         : markdown;
 
-    const serverProcessedContent: any = {
-      searchablePlainTexts: {
-        code: encode(processedMarkdown),
-      },
-    };
-
-    if (!allowHtml) {
-      serverProcessedContent["htmlStrings"] = {
-        html: "",
-      };
-    }
-
     let wpData = {
       title: webPartTitle,
-      serverProcessedContent,
+      serverProcessedContent: {
+        searchablePlainTexts: {
+          code: encode(processedMarkdown),
+        },
+      },
       dataVersion: "2.0",
       properties: {
         displayPreview: true,
