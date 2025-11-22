@@ -258,7 +258,7 @@ export class DoctorTranspiler {
               markdownWp ? markdownWp.id : null,
               options.markdown,
               file.endsWith(`.machinetranslated.md`),
-              { currentFilePath: file }
+              { currentFilePath: file, frontMatter: markup.data }
             );
           }
 

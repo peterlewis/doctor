@@ -4,6 +4,7 @@ export interface Shortcode {
 
 export interface ShortcodeContext {
   currentFilePath?: string;
+  frontMatter?: any;
 }
 
 export interface ShortcodeRender {
