@@ -8,6 +8,9 @@ export class TelemetryHelper {
    * @param options
    */
   public static trackTask(options: CommandArguments): void {
+    if (!appInsights || !("trackEvent" in appInsights)) {
+      return;
+    }
     if (!options.disableTracking) {
       appInsights.trackEvent({
         name: options.task,
@@ -52,6 +55,9 @@ export class TelemetryHelper {
    * @param options
    */
   public static trackCustomShortcodes(scLength: number): void {
+    if (!appInsights || !("trackEvent" in appInsights)) {
+      return;
+    }
     if (!CliCommand.getDisableTracking()) {
       appInsights.trackEvent({
         name: `shortcode-register`,
@@ -68,6 +74,9 @@ export class TelemetryHelper {
    * @param options
    */
   public static trackShortcodeUsage(scLength: number): void {
+    if (!appInsights || !("trackEvent" in appInsights)) {
+      return;
+    }
     if (!CliCommand.getDisableTracking()) {
       appInsights.trackEvent({
         name: `shortcode-usage`,

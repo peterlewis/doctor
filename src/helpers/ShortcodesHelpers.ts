@@ -1,14 +1,21 @@
 import { join } from "path";
 import * as fg from "fast-glob";
-import * as cheerio from "cheerio";
 import {
   IconRenderer,
   CalloutRenderer,
   TableOfContentsRenderer,
 } from "../shortcodes";
-import { Shortcode, TocPosition } from "@models";
+import { Shortcode, ShortcodeContext, TocPosition } from "@models";
 import { Logger, TelemetryHelper } from "@helpers";
 import { existsAsync } from "@utils";
+
+const loadCheerio = async () => import("cheerio");
+const cheerioLoadOptions = {
+  xml: {
+    xmlMode: true,
+    decodeEntities: false,
+  },
+};
 
 export class ShortcodesHelpers {
   private static shortcodes: Shortcode = {
@@ -49,16 +56,22 @@ export class ShortcodesHelpers {
    * Parse shortcodes before markdown was processed
    * @param htmlMarkup
    */
-  public static async parseBefore(markdown: string): Promise<string> {
-    return this.parse(markdown, true);
+  public static async parseBefore(
+    markdown: string,
+    context?: ShortcodeContext
+  ): Promise<string> {
+    return this.parse(markdown, true, context);
   }
 
   /**
    * Parse shortcodes after markdown was processed
    * @param htmlMarkup
    */
-  public static async parseAfter(htmlMarkup: string): Promise<string> {
-    return this.parse(htmlMarkup, false);
+  public static async parseAfter(
+    htmlMarkup: string,
+    context?: ShortcodeContext
+  ): Promise<string> {
+    return this.parse(htmlMarkup, false, context);
   }
 
   /**
@@ -67,7 +80,8 @@ export class ShortcodesHelpers {
    */
   private static async parse(
     htmlMarkup: string,
-    beforeMarkdown: boolean
+    beforeMarkdown: boolean,
+    context?: ShortcodeContext
   ): Promise<string> {
     if (!ShortcodesHelpers.shortcodes) return htmlMarkup;
 
@@ -88,10 +102,8 @@ export class ShortcodesHelpers {
     Logger.debug(`Doctor uses ${tags.length} shortcodes for HTML parsing.`);
     TelemetryHelper.trackShortcodeUsage(tags.length);
 
-    const $ = cheerio.load(htmlMarkup, {
-      xmlMode: true,
-      decodeEntities: false,
-    });
+    const { load } = await loadCheerio();
+    const $ = load(htmlMarkup, cheerioLoadOptions);
 
     for (const tag of tags) {
       const elms = $(tag).toArray();
@@ -119,7 +131,11 @@ export class ShortcodesHelpers {
               tocPostProcessing = attributes.position;
             }
 
-            const scHtml = await shortcode.render(attributes, $elm.html());
+            const scHtml = await shortcode.render(
+              attributes,
+              $elm.html(),
+              context
+            );
             $elm.replaceWith(scHtml);
 
             Logger.debug(`Shortcode "${tag}" its HTML:`);

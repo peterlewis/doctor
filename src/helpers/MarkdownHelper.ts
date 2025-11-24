@@ -1,10 +1,16 @@
+import type { HLJSApi } from "highlight.js";
 import * as CleanCSS from "clean-css";
 import * as fg from "fast-glob";
 import md = require("markdown-it");
-import hljs = require("highlight.js");
 import { encode } from "html-entities";
 import { CliCommand, ShortcodesHelpers, TempDataHelper } from "@helpers";
-import { CommandArguments, MarkdownSettings } from "@models";
+import {
+  CommandArguments,
+  MarkdownSettings,
+  ShortcodeContext,
+} from "@models";
+
+const hljs: HLJSApi = require("highlight.js");
 
 export class MarkdownHelper {
   /**
@@ -36,18 +42,26 @@ export class MarkdownHelper {
    * @param options
    * @returns
    */
-  public static async getHtmlData(markdown: string, options: CommandArguments) {
+  public static async getHtmlData(
+    markdown: string,
+    options: CommandArguments,
+    context?: ShortcodeContext
+  ) {
     const converter = md({
       html: true,
       breaks: true,
       highlight: (str, lang) => {
-        if (lang && hljs.getLanguage(lang)) {
+        const normalizedLang = lang ? lang.toLowerCase() : "";
+        if (normalizedLang && hljs.getLanguage(normalizedLang)) {
           try {
-            return `<pre class="hljs ${lang
-              .toLowerCase()
-              .replace(/ /g, "_")}"><code>${
-              hljs.highlight(lang, str, true).value
-            }</code></pre>`;
+            const highlighted = hljs.highlight(str, {
+              language: normalizedLang,
+              ignoreIllegals: true,
+            }).value;
+            return `<pre class="hljs ${normalizedLang.replace(
+              / /g,
+              "_"
+            )}"><code>${highlighted}</code></pre>`;
           } catch (__) {}
         }
 
@@ -69,14 +83,17 @@ export class MarkdownHelper {
       mdOptions && mdOptions.theme ? mdOptions.theme.toLowerCase() : "dark";
 
     const cleanCss = new CleanCSS({});
-    let htmlMarkup = await ShortcodesHelpers.parseBefore(`
+    let htmlMarkup = await ShortcodesHelpers.parseBefore(
+      `
 <div class="doctor__container">
 <div class="doctor__container__markdown">
   ${markdown}
 </div>
-</div>`);
+</div>`,
+      context
+    );
     htmlMarkup = converter.render(htmlMarkup);
-    htmlMarkup = await ShortcodesHelpers.parseAfter(htmlMarkup);
+    htmlMarkup = await ShortcodesHelpers.parseAfter(htmlMarkup, context);
     htmlMarkup = `${htmlMarkup}<style>${
       cleanCss.minify(this.getEditorStyles(theme === "light")).styles
     } ${cleanCss.minify(this.getShortcodeStyles()).styles}</style>`;
@@ -94,17 +111,30 @@ export class MarkdownHelper {
     markdown: string,
     mdOptions: MarkdownSettings | null,
     options: CommandArguments,
-    wasAlreadyParsed: boolean = false
+    wasAlreadyParsed: boolean = false,
+    context?: ShortcodeContext
   ): Promise<string> {
     const allowHtml = mdOptions && mdOptions.allowHtml;
     const theme =
       mdOptions && mdOptions.theme ? mdOptions.theme.toLowerCase() : "dark";
 
+    let processedMarkdown = markdown;
+    if (!allowHtml && !wasAlreadyParsed) {
+      processedMarkdown = await ShortcodesHelpers.parseBefore(
+        processedMarkdown,
+        context
+      );
+      processedMarkdown = await ShortcodesHelpers.parseAfter(
+        processedMarkdown,
+        context
+      );
+    }
+
     let wpData = {
       title: webPartTitle,
       serverProcessedContent: {
         searchablePlainTexts: {
-          code: encode(markdown),
+          code: encode(processedMarkdown),
         },
       },
       dataVersion: "2.0",
@@ -121,8 +151,8 @@ export class MarkdownHelper {
 
     if (allowHtml) {
       let htmlMarkup = wasAlreadyParsed
-        ? markdown
-        : await this.getHtmlData(markdown, options);
+        ? processedMarkdown
+        : await this.getHtmlData(processedMarkdown, options, context);
 
       if (htmlMarkup) {
         wpData.serverProcessedContent["htmlStrings"] = {

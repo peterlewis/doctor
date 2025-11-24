@@ -1,5 +1,4 @@
 import { Logger } from "./logger";
-import { v4 as uuidv4 } from "uuid";
 import { TranslationsResponse } from "@models";
 
 export class Translator {
@@ -19,6 +18,7 @@ export class Translator {
     contents: string,
     region: string = "global"
   ): Promise<TranslationsResponse[]> {
+    const { v4: uuidv4 } = await import("uuid");
     Logger.debug(`Translator will translate the page to ${language}`);
 
     let options = {

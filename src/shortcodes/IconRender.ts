@@ -1,12 +1,13 @@
 import { join } from "path";
-import { ShortcodeRender } from "@models";
+import { ShortcodeContext, ShortcodeRender } from "@models";
 import { Logger } from "@helpers";
 import { existsAsync, readFileAsync } from "@utils";
 
 export const IconRenderer: ShortcodeRender = {
   render: async function (
     attrs: { name: string },
-    markup: string
+    markup: string,
+    _context?: ShortcodeContext
   ): Promise<string> {
     if (!attrs || !attrs.name) {
       return "";

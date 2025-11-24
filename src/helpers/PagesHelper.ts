@@ -5,6 +5,7 @@ import {
   File,
   MarkdownSettings,
   CommandArguments,
+  ShortcodeContext,
 } from "@models";
 import {
   ArgumentsHelper,
@@ -304,7 +305,8 @@ export class PagesHelper {
     options: CommandArguments,
     wpId: string = null,
     mdOptions: MarkdownSettings | null,
-    wasAlreadyParsed: boolean = false
+    wasAlreadyParsed: boolean = false,
+    context?: ShortcodeContext
   ) {
     Logger.debug(
       `Insert the markdown webpart for the page ${slug} - Control ID: ${wpId} - Was already parsed: ${wasAlreadyParsed}`
@@ -315,7 +317,8 @@ export class PagesHelper {
       markdown,
       mdOptions,
       options,
-      wasAlreadyParsed
+      wasAlreadyParsed,
+      context
     );
 
     if (wpId) {

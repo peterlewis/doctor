@@ -1,4 +1,4 @@
-import { ShortcodeRender } from "@models";
+import { ShortcodeContext, ShortcodeRender } from "@models";
 
 const getIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -18,7 +18,8 @@ const getIcon = (type: string) => {
 export const CalloutRenderer: ShortcodeRender = {
   render: function (
     attrs: { title: string; type: string; bgColor: string; fgColor: string },
-    markup: string
+    markup: string,
+    _context?: ShortcodeContext
   ) {
     const title = attrs.title || "";
 
