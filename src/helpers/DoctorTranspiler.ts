@@ -199,12 +199,12 @@ export class DoctorTranspiler {
             `Creating or updating the page in SharePoint for ${filename}`
           );
 
-          // Check if the page already exists
-          const existed = await PagesHelper.createPageIfNotExists(
-            webUrl,
-            slug,
-            title,
-            layout,
+        // Check if the page already exists
+        const existed = await PagesHelper.createPageIfNotExists(
+          webUrl,
+          slug,
+          title,
+          layout,
             disablePageComments,
             description,
             template || options.pageTemplate,
@@ -220,14 +220,15 @@ export class DoctorTranspiler {
             (existed && !skipExistingPages) ||
             (existed && languagePageSlug)
           ) {
-            // Check if the header of the page needs to be changed
-            await HeaderHelper.set(
+            // Apply the header; if the page isn't ready yet, retry once after ensuring a section.
+            await this.applyHeaderWithRetry(
               file,
               webUrl,
               slug,
               header,
               options,
-              !!(template || options.pageTemplate)
+              !!(template || options.pageTemplate),
+              observer
             );
 
             // Retrieving all the controls from the page, so that we can start replacing the
@@ -475,5 +476,54 @@ export class DoctorTranspiler {
     }
 
     return content;
+  }
+
+  /**
+   * Apply the header; retry once after ensuring a section if the initial call fails.
+   */
+  private static async applyHeaderWithRetry(
+    file: string,
+    webUrl: string,
+    slug: string,
+    header: PageFrontMatter["header"],
+    options: CommandArguments,
+    isTemplateCopy: boolean,
+    observer?: Subscriber<string>
+  ) {
+    const apply = async () =>
+      HeaderHelper.set(file, webUrl, slug, header, options, isTemplateCopy);
+
+    try {
+      await apply();
+      return;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : (err as any)?.toString();
+      Logger.debug(
+        `Header apply failed for ${slug} (first attempt): ${message}`
+      );
+      if (observer) {
+        observer.next(
+          `Warning: header skipped on first attempt for ${slug}; retrying once.`
+        );
+      }
+    }
+
+    try {
+      await PagesHelper.ensureDefaultSection(webUrl, slug);
+      await apply();
+      if (observer) {
+        observer.next(`Header applied on retry for ${slug}.`);
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : (err as any)?.toString();
+      Logger.debug(`Header retry failed for ${slug}: ${message}`);
+      if (observer) {
+        observer.next(
+          `Warning: header skipped for ${slug} because the page was not ready.`
+        );
+      }
+    }
   }
 }
