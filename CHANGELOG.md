@@ -1,5 +1,13 @@
 # Changelog
-    
+
+## [1.14.0]
+
+- Upgraded core dependencies (M365 CLI 11, React 19, RxJS 7, TypeScript 5.9, Cypress 15, etc.).
+- Fixed command parsing so page titles and arguments with spaces are preserved when passed to CLI calls.
+- Hardened telemetry: no-ops without a valid Application Insights connection string/key and prevents publish failures from telemetry errors.
+- Updated markdown rendering stack (cheerio/highlight.js) for compatibility with the latest packages.
+- Lazy-loads ESM-only modules (inquirer, uuid, cheerio) to keep the CLI working on Node 18+.
+
 ## [1.13.0]
 
 
