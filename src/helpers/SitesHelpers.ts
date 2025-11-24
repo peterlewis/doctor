@@ -91,6 +91,12 @@ export class SiteHelpers {
       try {
         let imgUrl = siteDesign.logo;
 
+        // Skip if logo is an empty string or only whitespace.
+        if (typeof imgUrl === "string" && imgUrl.trim() === "") {
+          Logger.debug(`Site logo is empty; skipping site logo update.`);
+          return;
+        }
+
         if (imgUrl) {
           const imgPath = join(process.cwd(), siteDesign.logo);
 
