@@ -1,10 +1,14 @@
 import { join } from "path";
 import * as arg from "arg";
 import * as kleur from "kleur";
-import * as inquirer from "inquirer";
 import { CommandArguments } from "@models";
 import { Command } from "@commands";
 import { existsAsync, readFileAsync } from "@utils";
+
+const loadPrompt = async () => {
+  const mod: any = await import("inquirer");
+  return mod.default?.prompt ?? mod.prompt;
+};
 
 export class OptionsHelper {
   /**
@@ -234,7 +238,8 @@ export class OptionsHelper {
     }
 
     try {
-      const answers = await inquirer.prompt(questions);
+      const prompt = await loadPrompt();
+      const answers = await prompt(questions);
 
       return {
         ...options,

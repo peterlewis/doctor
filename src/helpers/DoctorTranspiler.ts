@@ -1,4 +1,3 @@
-import { CheerioAPI, load, Element } from "cheerio";
 import * as matter from "gray-matter";
 import * as MarkdownIt from "markdown-it";
 import {
@@ -20,7 +19,17 @@ import {
 } from "@helpers";
 import { Observable, Subscriber } from "rxjs";
 import { basename, join, dirname } from "path";
+import type { CheerioAPI, CheerioOptions } from "cheerio";
+import type { AnyNode } from "domhandler";
 import { existsAsync, mkdirAsync, readFileAsync, writeFileAsync } from "@utils";
+
+const loadCheerio = async () => import("cheerio");
+const cheerioLoadOptions: CheerioOptions = {
+  xml: {
+    xmlMode: true,
+    decodeEntities: false,
+  },
+};
 
 export class DoctorTranspiler {
   private static converter = new MarkdownIt({ html: true, breaks: true });
@@ -105,10 +114,8 @@ export class DoctorTranspiler {
           ? contents
           : this.converter.render(contents);
 
-        const $ = load(htmlMarkup, {
-          xmlMode: true,
-          decodeEntities: false,
-        });
+        const { load } = await loadCheerio();
+        const $ = load(htmlMarkup, cheerioLoadOptions);
         const imgElms = $(`img`).toArray();
         const anchorElms = $(`a`).toArray();
 
@@ -341,7 +348,7 @@ export class DoctorTranspiler {
    */
   private static async processImages(
     $: CheerioAPI,
-    imgElms: Element[],
+    imgElms: AnyNode[],
     filePath: string,
     contents: string,
     options: CommandArguments,
@@ -402,7 +409,7 @@ export class DoctorTranspiler {
    */
   private static async processLinks(
     $: CheerioAPI,
-    linkElms: Element[],
+    linkElms: AnyNode[],
     filePath: string,
     content: string,
     options: CommandArguments

@@ -1,7 +1,7 @@
+import type { HLJSApi } from "highlight.js";
 import * as CleanCSS from "clean-css";
 import * as fg from "fast-glob";
 import md = require("markdown-it");
-import hljs = require("highlight.js");
 import { encode } from "html-entities";
 import { CliCommand, ShortcodesHelpers, TempDataHelper } from "@helpers";
 import {
@@ -9,6 +9,8 @@ import {
   MarkdownSettings,
   ShortcodeContext,
 } from "@models";
+
+const hljs: HLJSApi = require("highlight.js");
 
 export class MarkdownHelper {
   /**
@@ -49,13 +51,17 @@ export class MarkdownHelper {
       html: true,
       breaks: true,
       highlight: (str, lang) => {
-        if (lang && hljs.getLanguage(lang)) {
+        const normalizedLang = lang ? lang.toLowerCase() : "";
+        if (normalizedLang && hljs.getLanguage(normalizedLang)) {
           try {
-            return `<pre class="hljs ${lang
-              .toLowerCase()
-              .replace(/ /g, "_")}"><code>${
-              hljs.highlight(lang, str, true).value
-            }</code></pre>`;
+            const highlighted = hljs.highlight(str, {
+              language: normalizedLang,
+              ignoreIllegals: true,
+            }).value;
+            return `<pre class="hljs ${normalizedLang.replace(
+              / /g,
+              "_"
+            )}"><code>${highlighted}</code></pre>`;
           } catch (__) {}
         }
 

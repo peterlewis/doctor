@@ -1,6 +1,5 @@
 import { join } from "path";
 import * as fg from "fast-glob";
-import * as cheerio from "cheerio";
 import {
   IconRenderer,
   CalloutRenderer,
@@ -9,6 +8,14 @@ import {
 import { Shortcode, ShortcodeContext, TocPosition } from "@models";
 import { Logger, TelemetryHelper } from "@helpers";
 import { existsAsync } from "@utils";
+
+const loadCheerio = async () => import("cheerio");
+const cheerioLoadOptions = {
+  xml: {
+    xmlMode: true,
+    decodeEntities: false,
+  },
+};
 
 export class ShortcodesHelpers {
   private static shortcodes: Shortcode = {
@@ -95,10 +102,8 @@ export class ShortcodesHelpers {
     Logger.debug(`Doctor uses ${tags.length} shortcodes for HTML parsing.`);
     TelemetryHelper.trackShortcodeUsage(tags.length);
 
-    const $ = cheerio.load(htmlMarkup, {
-      xmlMode: true,
-      decodeEntities: false,
-    });
+    const { load } = await loadCheerio();
+    const $ = load(htmlMarkup, cheerioLoadOptions);
 
     for (const tag of tags) {
       const elms = $(tag).toArray();
